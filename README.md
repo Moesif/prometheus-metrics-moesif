@@ -75,6 +75,8 @@ scrape_configs:
 
 **Important:** The `scrape_interval` should match `MOESIF_QUERY_WINDOW_SECONDS` so that each scrape covers exactly the time period since the last scrape, with no gaps or overlaps.
 
+For performance reasons, we do not recommend smaller number than 60s.
+
 ## Metrics Reference
 
 All metrics are exposed as Prometheus **gauges** (except `moesif_scrape_errors_total` which is a counter). They represent values within the configured query window.
