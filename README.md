@@ -72,6 +72,7 @@ All configuration is done via environment variables or a `.env` file.
 | `MOESIF_API_BASE_URL` | No | `https://api.moesif.com` | Moesif API base URL |
 | `PORT` | No | `9277` | Port the exporter listens on |
 | `MOESIF_QUERY_WINDOW_SECONDS` | No | `60` | How far back (in seconds) to query Moesif on each scrape |
+| `MOESIF_QUERY_DELAY_SECONDS` | No | `0` | Shift the query window back by this many seconds (see [Data Consistency](#data-consistency-and-delay)) |
 
 ## Prometheus Configuration
 
@@ -118,6 +119,26 @@ All metrics are exposed as Prometheus **gauges** (except `moesif_scrape_errors_t
 |--------|------|-------------|
 | `moesif_scrape_errors_total` | Counter | Number of failed Moesif API queries |
 | `moesif_scrape_duration_ms` | Gauge | Time taken to query Moesif (ms) |
+
+## Data Consistency and Delay
+
+Moesif uses a distributed architecture with eventual consistency. This means the most recent few seconds of data may not be fully available when queried. Events go through ingestion, processing, and indexing, so there is a small delay before they appear in query results.
+
+By default, the exporter queries from `[now - window, now]`. If you find that recent data is incomplete or inconsistent, you can shift the entire query window back by setting `MOESIF_QUERY_DELAY_SECONDS`:
+
+```
+Without delay (default):   |-------- 60s --------|
+                                                  now
+
+With 10s delay:            |-------- 60s --------|
+                                            now-10s    now
+                                              ^         ^
+                                          query end   (skipped)
+```
+
+For example, with `MOESIF_QUERY_DELAY_SECONDS=10` and `MOESIF_QUERY_WINDOW_SECONDS=60`, each scrape queries the window `[now-70s, now-10s]`, giving Moesif an extra 10 seconds for data to arrive and be indexed.
+
+A delay of **10-30 seconds** is recommended for most deployments. The tradeoff is slightly less real-time data in exchange for more accurate and complete metrics.
 
 ## Why Gauges Instead of Counters?
 
