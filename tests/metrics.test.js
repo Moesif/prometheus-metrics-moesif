@@ -19,8 +19,9 @@ async function getMetricValue(name, labels) {
   return metric.values[0]?.value;
 }
 
-// Full mock response from Moesif
-const mockEventMetricsResponse = {
+// Full mock response from Moesif (single query)
+const mockAllMetricsResponse = {
+  hits: { total: 112 },
   aggregations: {
     status_class: {
       buckets: [
@@ -63,6 +64,8 @@ const mockEventMetricsResponse = {
         },
       ],
     },
+    unique_users: { value: 25 },
+    unique_companies: { value: 8 },
   },
 };
 
@@ -70,14 +73,7 @@ beforeEach(() => {
   _resetCacheForTesting();
   jest.clearAllMocks();
 
-  moesif.getEventCount.mockResolvedValue({ count: 112 });
-  moesif.getEventMetrics.mockResolvedValue(mockEventMetricsResponse);
-  moesif.getActiveUsers.mockResolvedValue({
-    aggregations: { unique_users: { value: 25 } },
-  });
-  moesif.getActiveCompanies.mockResolvedValue({
-    aggregations: { unique_companies: { value: 8 } },
-  });
+  moesif.getAllMetrics.mockResolvedValue(mockAllMetricsResponse);
 });
 
 afterEach(() => {
@@ -85,7 +81,7 @@ afterEach(() => {
 });
 
 describe('collectMetrics', () => {
-  test('populates total API calls', async () => {
+  test('populates total API calls from hits.total', async () => {
     await collectMetrics();
 
     const value = await getMetricValue('moesif_api_calls_total');
@@ -129,22 +125,8 @@ describe('collectMetrics', () => {
     ).toBe(400.0);
   });
 
-  test('handles numeric event count response', async () => {
-    moesif.getEventCount.mockResolvedValue(99);
-    await collectMetrics();
-
-    expect(await getMetricValue('moesif_api_calls_total')).toBe(99);
-  });
-
-  test('handles event count from hits.total', async () => {
-    moesif.getEventCount.mockResolvedValue({ hits: { total: 77 } });
-    await collectMetrics();
-
-    expect(await getMetricValue('moesif_api_calls_total')).toBe(77);
-  });
-
   test('increments scrape error counter on failure', async () => {
-    moesif.getEventCount.mockRejectedValue(new Error('API down'));
+    moesif.getAllMetrics.mockRejectedValue(new Error('API down'));
     await collectMetrics();
 
     expect(await getMetricValue('moesif_scrape_errors_total')).toBe(1);
@@ -156,26 +138,32 @@ describe('collectMetrics', () => {
     const duration = await getMetricValue('moesif_scrape_duration_ms');
     expect(duration).toBeGreaterThanOrEqual(0);
   });
+
+  test('only calls Moesif once per collect', async () => {
+    await collectMetrics();
+
+    expect(moesif.getAllMetrics).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('caching', () => {
   test('does not call Moesif again within the cache window', async () => {
     await collectMetrics();
-    expect(moesif.getEventCount).toHaveBeenCalledTimes(1);
+    expect(moesif.getAllMetrics).toHaveBeenCalledTimes(1);
 
     // Call again immediately — should be cached
     await collectMetrics();
-    expect(moesif.getEventCount).toHaveBeenCalledTimes(1);
+    expect(moesif.getAllMetrics).toHaveBeenCalledTimes(1);
   });
 
   test('calls Moesif again after cache is reset', async () => {
     await collectMetrics();
-    expect(moesif.getEventCount).toHaveBeenCalledTimes(1);
+    expect(moesif.getAllMetrics).toHaveBeenCalledTimes(1);
 
     // Reset cache and call again
     _resetCacheForTesting();
     await collectMetrics();
-    expect(moesif.getEventCount).toHaveBeenCalledTimes(2);
+    expect(moesif.getAllMetrics).toHaveBeenCalledTimes(2);
   });
 });
 

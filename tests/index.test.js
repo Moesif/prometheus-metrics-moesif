@@ -12,12 +12,14 @@ let server;
 let baseUrl;
 
 beforeAll((done) => {
-  moesif.getEventCount.mockResolvedValue({ count: 10 });
-  moesif.getEventMetrics.mockResolvedValue({ aggregations: {} });
-  moesif.getActiveUsers.mockResolvedValue({ aggregations: { unique_users: { value: 1 } } });
-  moesif.getActiveCompanies.mockResolvedValue({ aggregations: { unique_companies: { value: 1 } } });
+  moesif.getAllMetrics.mockResolvedValue({
+    hits: { total: 10 },
+    aggregations: {
+      unique_users: { value: 1 },
+      unique_companies: { value: 1 },
+    },
+  });
 
-  // Require the app but we need to capture the server
   const express = require('express');
   const { register, collectMetrics } = require('../src/metrics');
 
