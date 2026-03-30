@@ -75,7 +75,7 @@ scrape_configs:
 
 **Important:** The `scrape_interval` should match `MOESIF_QUERY_WINDOW_SECONDS` so that each scrape covers exactly the time period since the last scrape, with no gaps or overlaps.
 
-We do not recommend smaller number than 60s.
+For performance reasons, we do not recommend smaller number than 60s.
 
 ## Metrics Reference
 
