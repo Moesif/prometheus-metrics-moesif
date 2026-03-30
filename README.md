@@ -24,7 +24,19 @@ Each time Prometheus scrapes the `/metrics` endpoint, the exporter queries Moesi
 1. Log in to your [Moesif Dashboard](https://www.moesif.com/wrap/dash)
 2. Go to **Settings** (bottom-left gear icon)
 3. Select **Management API Keys**
-4. Copy your key
+4. Create a new key with the following **Analytics Read** permissions:
+
+![Management API Key Permissions](docs/management-api-permissions.png)
+
+The key needs **Read** access on these Analytics resources:
+- companies
+- customer_actions
+- events
+- metrics
+- reports
+- users
+
+5. Copy your key
 
 ## Quick Start
 
