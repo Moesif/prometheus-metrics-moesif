@@ -186,4 +186,9 @@ async function doCollect() {
   scrapeDuration.set(Date.now() - start);
 }
 
-module.exports = { register, collectMetrics };
+function _resetCacheForTesting() {
+  lastCollectTime = 0;
+  collectInProgress = null;
+}
+
+module.exports = { register, collectMetrics, _resetCacheForTesting };
