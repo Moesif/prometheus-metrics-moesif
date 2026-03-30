@@ -77,9 +77,36 @@ const scrapeDuration = new client.Gauge({
   registers: [register],
 });
 
-// --- Collection logic ---
+// --- Caching ---
+
+let lastCollectTime = 0;
+let collectInProgress = null;
 
 async function collectMetrics() {
+  const now = Date.now();
+  const cacheMs = config.queryWindowSeconds * 1000;
+
+  // Return cached results if within the query window
+  if (now - lastCollectTime < cacheMs) {
+    return;
+  }
+
+  // If a collection is already in progress, wait for it instead of firing duplicate requests
+  if (collectInProgress) {
+    return collectInProgress;
+  }
+
+  collectInProgress = doCollect();
+  try {
+    await collectInProgress;
+  } finally {
+    collectInProgress = null;
+  }
+}
+
+// --- Collection logic ---
+
+async function doCollect() {
   const start = Date.now();
 
   try {
