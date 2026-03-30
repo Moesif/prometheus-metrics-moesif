@@ -1,4 +1,5 @@
 const config = require('./config');
+const { version } = require('../package.json');
 
 async function queryMoesif(path, body = {}) {
   const url = `${config.moesifBaseUrl}${path}`;
@@ -8,6 +9,7 @@ async function queryMoesif(path, body = {}) {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
       'Authorization': `Bearer ${config.moesifApiKey}`,
+      'User-Agent': `prometheus-metrics-moesif/${version}`,
     },
     body: JSON.stringify(body),
   });
