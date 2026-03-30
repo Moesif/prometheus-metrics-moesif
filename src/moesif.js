@@ -22,10 +22,12 @@ async function queryMoesif(path, body = {}) {
 
 function buildTimeRange() {
   const now = new Date();
-  const from = new Date(now.getTime() - config.queryWindowSeconds * 1000);
+  const delayMs = config.queryDelaySeconds * 1000;
+  const to = new Date(now.getTime() - delayMs);
+  const from = new Date(to.getTime() - config.queryWindowSeconds * 1000);
   return {
     from: from.toISOString(),
-    to: now.toISOString(),
+    to: to.toISOString(),
   };
 }
 

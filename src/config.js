@@ -5,6 +5,7 @@ const config = {
   moesifBaseUrl: process.env.MOESIF_API_BASE_URL || 'https://api.moesif.com',
   port: parseInt(process.env.PORT, 10) || 9277,
   queryWindowSeconds: parseInt(process.env.MOESIF_QUERY_WINDOW_SECONDS, 10) || 60,
+  queryDelaySeconds: parseInt(process.env.MOESIF_QUERY_DELAY_SECONDS, 10) || 0,
 };
 
 if (!config.moesifApiKey) {
