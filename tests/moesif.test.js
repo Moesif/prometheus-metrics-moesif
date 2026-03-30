@@ -23,32 +23,24 @@ function mockFetchResponse(data, status = 200) {
   });
 }
 
-describe('moesif.getEventCount', () => {
+describe('moesif.getAllMetrics', () => {
   test('calls the correct endpoint with from/to params', async () => {
-    mockFetchResponse({ count: 42 });
+    mockFetchResponse({ hits: { total: 42 }, aggregations: {} });
 
-    const result = await moesif.getEventCount();
+    const result = await moesif.getAllMetrics();
 
     expect(global.fetch).toHaveBeenCalledTimes(1);
     const [url, options] = global.fetch.mock.calls[0];
-    expect(url).toMatch(/\/search\/~\/count\/events\?from=.*&to=.*/);
+    expect(url).toMatch(/\/search\/~\/search\/events\?from=.*&to=.*/);
     expect(options.method).toBe('POST');
     expect(options.headers['Authorization']).toBe('Bearer test-api-key');
-    expect(result).toEqual({ count: 42 });
+    expect(result.hits.total).toBe(42);
   });
 
-  test('throws on non-ok response', async () => {
-    mockFetchResponse({ error: 'unauthorized' }, 401);
+  test('sends all aggregations in a single query', async () => {
+    mockFetchResponse({ hits: { total: 0 }, aggregations: {} });
 
-    await expect(moesif.getEventCount()).rejects.toThrow('Moesif API error 401');
-  });
-});
-
-describe('moesif.getEventMetrics', () => {
-  test('sends aggregation query for status codes, latency, and routes', async () => {
-    mockFetchResponse({ aggregations: {} });
-
-    await moesif.getEventMetrics();
+    await moesif.getAllMetrics();
 
     const [, options] = global.fetch.mock.calls[0];
     const body = JSON.parse(options.body);
@@ -59,40 +51,30 @@ describe('moesif.getEventMetrics', () => {
     expect(body.aggs.by_route).toBeDefined();
     expect(body.aggs.by_route.aggs.status_codes).toBeDefined();
     expect(body.aggs.by_route.aggs.latency).toBeDefined();
-  });
-});
-
-describe('moesif.getActiveUsers', () => {
-  test('sends cardinality aggregation on user_id.raw', async () => {
-    mockFetchResponse({ aggregations: { unique_users: { value: 15 } } });
-
-    const result = await moesif.getActiveUsers();
-
-    const [, options] = global.fetch.mock.calls[0];
-    const body = JSON.parse(options.body);
     expect(body.aggs.unique_users.cardinality.field).toBe('user_id.raw');
-    expect(result.aggregations.unique_users.value).toBe(15);
-  });
-});
-
-describe('moesif.getActiveCompanies', () => {
-  test('sends cardinality aggregation on company_id.raw', async () => {
-    mockFetchResponse({ aggregations: { unique_companies: { value: 5 } } });
-
-    const result = await moesif.getActiveCompanies();
-
-    const [, options] = global.fetch.mock.calls[0];
-    const body = JSON.parse(options.body);
     expect(body.aggs.unique_companies.cardinality.field).toBe('company_id.raw');
-    expect(result.aggregations.unique_companies.value).toBe(5);
+  });
+
+  test('throws on non-ok response', async () => {
+    mockFetchResponse({ error: 'unauthorized' }, 401);
+
+    await expect(moesif.getAllMetrics()).rejects.toThrow('Moesif API error 401');
+  });
+
+  test('only makes one API call', async () => {
+    mockFetchResponse({ hits: { total: 0 }, aggregations: {} });
+
+    await moesif.getAllMetrics();
+
+    expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('date range', () => {
   test('from is before to and both are valid ISO dates', async () => {
-    mockFetchResponse({});
+    mockFetchResponse({ hits: { total: 0 }, aggregations: {} });
 
-    await moesif.getEventCount();
+    await moesif.getAllMetrics();
 
     const [url] = global.fetch.mock.calls[0];
     const urlObj = new URL(url);
