@@ -79,12 +79,14 @@ const scrapeDuration = new client.Gauge({
 
 // --- Caching ---
 
+const MIN_COLLECT_INTERVAL_MS = 30 * 1000; // never call Moesif more than once per 30s
+
 let lastCollectTime = 0;
 let collectInProgress = null;
 
 async function collectMetrics() {
   const now = Date.now();
-  const cacheMs = config.queryWindowSeconds * 1000;
+  const cacheMs = Math.max(config.queryWindowSeconds * 1000, MIN_COLLECT_INTERVAL_MS);
 
   // Return cached results if within the query window
   if (now - lastCollectTime < cacheMs) {
@@ -175,6 +177,7 @@ async function doCollect() {
     const companyCount = companiesRes.aggregations?.unique_companies?.value || 0;
     activeCompanies.set(companyCount);
 
+    lastCollectTime = Date.now();
   } catch (err) {
     scrapeErrors.inc();
     console.error('Error collecting Moesif metrics:', err.message);
