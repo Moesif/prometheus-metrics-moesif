@@ -112,19 +112,13 @@ async function doCollect() {
   const start = Date.now();
 
   try {
-    const [eventCountRes, eventMetricsRes, usersRes, companiesRes] = await Promise.all([
-      moesif.getEventCount(),
-      moesif.getEventMetrics(),
-      moesif.getActiveUsers(),
-      moesif.getActiveCompanies(),
-    ]);
+    const result = await moesif.getAllMetrics();
 
-    // Total event count
-    const total = typeof eventCountRes === 'number' ? eventCountRes : (eventCountRes.count || eventCountRes.hits?.total || 0);
+    // Total event count from hits.total
+    const total = result.hits?.total || 0;
     apiCallsTotal.set(total);
 
-    // Aggregations from event metrics
-    const aggs = eventMetricsRes.aggregations || {};
+    const aggs = result.aggregations || {};
 
     // Status code breakdown
     apiCallsByStatus.reset();
@@ -169,13 +163,9 @@ async function doCollect() {
       }
     }
 
-    // Active users
-    const userCount = usersRes.aggregations?.unique_users?.value || 0;
-    activeUsers.set(userCount);
-
-    // Active companies
-    const companyCount = companiesRes.aggregations?.unique_companies?.value || 0;
-    activeCompanies.set(companyCount);
+    // Active users and companies
+    activeUsers.set(aggs.unique_users?.value || 0);
+    activeCompanies.set(aggs.unique_companies?.value || 0);
 
     lastCollectTime = Date.now();
   } catch (err) {

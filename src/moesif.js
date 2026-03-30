@@ -29,15 +29,8 @@ function buildTimeRange() {
   };
 }
 
-// Total event count in the time window
-async function getEventCount() {
-  const { from, to } = buildTimeRange();
-  const path = `/search/~/count/events?from=${from}&to=${to}`;
-  return queryMoesif(path, {});
-}
-
-// Event count with aggregations: status codes, latency percentiles, top routes
-async function getEventMetrics() {
+// Single query that fetches all metrics in one API call
+async function getAllMetrics() {
   const { from, to } = buildTimeRange();
   const path = `/search/~/search/events?from=${from}&to=${to}`;
   const body = {
@@ -65,33 +58,9 @@ async function getEventMetrics() {
           },
         },
       },
-    },
-    size: 0,
-  };
-  return queryMoesif(path, body);
-}
-
-// Unique user count
-async function getActiveUsers() {
-  const { from, to } = buildTimeRange();
-  const path = `/search/~/search/events?from=${from}&to=${to}`;
-  const body = {
-    aggs: {
       unique_users: {
         cardinality: { field: 'user_id.raw' },
       },
-    },
-    size: 0,
-  };
-  return queryMoesif(path, body);
-}
-
-// Unique company count
-async function getActiveCompanies() {
-  const { from, to } = buildTimeRange();
-  const path = `/search/~/search/events?from=${from}&to=${to}`;
-  const body = {
-    aggs: {
       unique_companies: {
         cardinality: { field: 'company_id.raw' },
       },
@@ -102,8 +71,5 @@ async function getActiveCompanies() {
 }
 
 module.exports = {
-  getEventCount,
-  getEventMetrics,
-  getActiveUsers,
-  getActiveCompanies,
+  getAllMetrics,
 };
