@@ -21,7 +21,7 @@ Each time Prometheus scrapes the `/metrics` endpoint, the exporter queries Moesi
 
 ### Getting Your Moesif Management API Key
 
-1. Log in to your [Moesif Dashboard](https://www.moesif.com/wrap/dash)
+1. Log in to your [Moesif Dashboard](https://www.moesif.com/wrap)
 2. Go to **Settings** (bottom-left gear icon)
 3. Select **Management API Keys**
 4. Create a new key with the following **Analytics Read** permissions:
